@@ -8,18 +8,15 @@ The impact model is [EcoLogits](https://ecologits.ai).
 
 ## Install
 
-Python 3.10+. Until it is on PyPI, install from a checkout of this repository:
-
-```bash
-uv tool install --editable ".[zstd]"
-```
-
-Once published:
+Python 3.10+. From [PyPI](https://pypi.org/project/agent-footprint/):
 
 ```bash
 uvx agent-footprint serve            # try it without installing
 uv tool install agent-footprint      # or: pipx install agent-footprint
 ```
+
+On Python 3.13 or older, add the `zstd` extra (`uv tool install "agent-footprint[zstd]"`) to also
+read Codex CLI's compressed archived sessions.
 
 Optionally, open the view automatically whenever you start a coding agent (run from an installed
 copy, not `uvx`):
@@ -101,7 +98,11 @@ assumptions, how figures are kept current, and configuration.
 ```bash
 uv sync --extra zstd
 uv run python -m pytest
+uv tool install --editable ".[zstd]"   # use the checkout as your installed agent-footprint
 ```
+
+To release, set `version` in `pyproject.toml`, commit, and push a matching tag (`git tag v0.1.1 &&
+git push origin v0.1.1`). `.github/workflows/release.yml` tests, builds and publishes to PyPI.
 
 To add an agent, subclass `FileSource` in `src/agent_footprint/sources/base.py` (see the existing
 sources) and register it in `sources/__init__.py`.

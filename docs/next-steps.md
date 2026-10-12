@@ -1,24 +1,28 @@
 # Next steps
 
-State as of 2026-10-11: everything is committed on `master` and pushed to `github.com/warmelinks/agent-footprint`.
+State as of 2026-10-12: everything is committed on `master` and pushed to `github.com/warmelinks/agent-footprint`;
+0.1.0 is on PyPI.
 Tests pass: 77 passed, 2 skipped on Linux; 76 passed, 3 skipped under Windows Python 3.13
 (`uv run python -m pytest`, which installs the `dev` group). Skips are platform-specific tests.
 
 The review of 2026-10-11 (privacy, history location, hooks, ports, config, dashboard access,
 syncing, Windows) is done except for the items under "Open from the review" below.
 
-## Before publishing
+## Publishing
 
-- [ ] **Repository and package name.** `pyproject.toml`, the README and the dashboard link to
-      `github.com/warmelinks/agent-footprint`. Check that `agent-footprint` is free on
-      PyPI, create the GitHub repo, and update the links if the name differs.
-- [ ] **Commit author email.** The commits use `steven@soundappraisal.eu` from the local git config;
-      decide which address to use publicly before pushing.
-- [ ] **GitHub settings** the workflows rely on:
+- [x] **Repository and package name:** `github.com/warmelinks/agent-footprint`, PyPI `agent-footprint`.
+- [x] **Commit author email:** the pushed commits use `s.warmelink@pl.hanze.nl`.
+- [x] **PyPI trusted publisher** for `release.yml` (environment `pypi`).
+- [x] **First release:** `v0.1.0` published by `release.yml` on 2026-10-12. The PyPI page shows that
+      release's README (still "Until it is on PyPI…"); the next release updates it.
+- [ ] **Missing workflows.** Only `release.yml` exists. The CI test matrix (Linux, Windows, macOS),
+      Dependabot with `automerge.yml`, the monthly `update_factors.py` job and the yearly
+      `stale_factors.py` job described in `docs/details.md` were lost from the history and need
+      writing again.
+- [ ] **GitHub settings** those workflows rely on:
   - "Allow auto-merge", plus a branch protection rule on `master` that requires the CI checks (`automerge.yml`).
-  - A PyPI trusted publisher for `release.yml` (environment `pypi`).
+  - Settings → Actions → Workflow permissions: read and write, and allow Actions to create pull requests.
   - Labels `ecologits` and `data`, used by the scheduled jobs.
-- [ ] **First release:** tag `v0.1.0`; `release.yml` builds and publishes.
 
 ## Verification still missing
 
