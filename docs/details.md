@@ -80,7 +80,7 @@ Claude Code deletes transcripts after `cleanupPeriodDays` (30 days by default), 
 `general.sessionRetention.maxAge` (also 30 days by default). Each time agent-footprint runs, it copies
 new usage records into `~/.local/share/agent-footprint/history.sqlite` (`$XDG_DATA_HOME`), and they
 stay there after the source logs are gone. That is what makes month and year views possible.
-(Version 0.1.0 kept it in `~/.cache`; it is moved automatically.)
+(Development versions before the first release kept it in `~/.cache`; it is moved automatically.)
 
 **What is stored:** token counts, timestamps, model names, and each session's id and project folder
 name. No prompt or response content, with one opt-in exception: with `"store_titles": true` (or

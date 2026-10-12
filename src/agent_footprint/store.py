@@ -45,7 +45,7 @@ RECORD_COLS = ("tool, id, session, ts, epoch, model, provider, source, output, i
 
 
 def default_path():
-    """The history in the data folder. Versions up to 0.1.0 kept it in the cache folder, which
+    """The history in the data folder. Pre-release versions kept it in the cache folder, which
     cleanup tools may empty; it is moved from there the first time."""
     path = os.path.join(data_dir(), "history.sqlite")
     old = os.path.join(cache_dir(), "history.sqlite")
@@ -114,7 +114,7 @@ class Store:
         if self.path == ":memory:":  # tests: one shared connection
             self._shared = sqlite3.connect(":memory:", check_same_thread=False)
         self.db.executescript(SCHEMA)
-        if "requests" not in [r[1] for r in self.db.execute("PRAGMA table_info(records)")]:  # history from 0.1.0
+        if "requests" not in [r[1] for r in self.db.execute("PRAGMA table_info(records)")]:  # history from a pre-release version
             self.db.execute("ALTER TABLE records ADD COLUMN requests INTEGER NOT NULL DEFAULT 1")
         self.db.commit()
 
