@@ -118,19 +118,9 @@ guesswork. Training, end-of-life, networking and end-user devices are outside
 More in [docs/details.md](docs/details.md): log locations, history, the methodology and its
 assumptions, how figures are kept current, and configuration.
 
-## Development
+## Contributing
 
-```bash
-uv sync --extra zstd
-uv run python -m pytest
-uv tool install --editable ".[zstd]"   # use the checkout as your installed agent-footprint
-```
-
-To release, set `version` in `pyproject.toml`, commit, and push a matching tag (`git tag v0.1.1 &&
-git push origin v0.1.1`). `.github/workflows/release.yml` tests, builds and publishes to PyPI.
-
-To add an agent, subclass `FileSource` in `src/agent_footprint/sources/base.py` (see the existing
-sources) and register it in `sources/__init__.py`.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
