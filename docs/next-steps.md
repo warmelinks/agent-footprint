@@ -2,7 +2,7 @@
 
 State as of 2026-10-12: everything is committed on `master` and pushed to `github.com/warmelinks/agent-footprint`;
 0.1.0 is on PyPI.
-Tests pass: 77 passed, 2 skipped on Linux; 76 passed, 3 skipped under Windows Python 3.13
+Tests pass: 78 passed, 2 skipped on Linux; 77 passed, 3 skipped under Windows Python 3.13
 (`uv run python -m pytest`, which installs the `dev` group). Skips are platform-specific tests.
 
 The review of 2026-10-11 (privacy, history location, hooks, ports, config, dashboard access,
@@ -17,13 +17,15 @@ syncing, Windows) is done except for the items under "Open from the review" belo
       release's README (still "Until it is on PyPI…"); the next release updates it.
 - [x] **Workflows** (written again 2026-10-12, the originals were lost from the history): `ci.yml`
       (Linux, Windows, macOS × Python 3.10 and 3.14; weekly also the newest EcoLogits), `dependabot.yml`
-      + `automerge.yml`, `update-factors.yml` (monthly) and `stale-factors.yml` (yearly). All have
-      passed locally; check their first runs on GitHub.
+      + `automerge.yml`, `update-factors.yml` (monthly) and `stale-factors.yml` (yearly). All have run
+      green on GitHub (the scheduled two started by hand). Not yet run: `release.yml` since Dependabot moved
+      it to `download-artifact@v8` and it was moved to `upload-artifact@v7`; the next tag tests that.
 - [ ] **GitHub settings** those workflows rely on:
-  - Settings → General: "Allow auto-merge".
-  - A branch protection rule on `master` that requires the `ci-ok` check (it fails when any test job fails).
-  - Settings → Actions → Workflow permissions: read and write, and allow Actions to create pull requests.
-  - Labels `ecologits` and `data`, used by Dependabot and the scheduled jobs.
+  - [ ] Settings → General: "Allow auto-merge".
+  - [ ] A branch protection rule on `master` that requires the `ci-ok` check (it fails when any test job
+        fails). Not set as of 2026-10-12; without it `automerge.yml` has no checks to wait for.
+  - [ ] Settings → Actions → Workflow permissions: read and write, and allow Actions to create pull requests.
+  - [x] Labels `ecologits` and `data`, used by Dependabot and the scheduled jobs.
 - **Known quirk:** pull requests opened by `update-factors.yml` don't start `ci.yml` (GitHub doesn't
   trigger workflows from `GITHUB_TOKEN` actions), so `ci-ok` never reports and the rule blocks the merge.
   The job runs the tests itself; close and reopen the pull request to start CI, or merge as admin.
@@ -65,11 +67,11 @@ fallback were run natively. What only a native session can check:
 - [ ] **Codex, Gemini CLI, OpenCode on Windows**, if installed: their log locations and hooks.
 - [x] **Mistral Vibe and GitHub Copilot (VS Code chat)** update live in `watch` and the dashboard
       (checked 2026-10-11). Neither has a session-start hook in `setup` yet; the Copilot CLI is unsupported.
-- [ ] **CI:** the `windows-latest` jobs pass once the repository is on GitHub.
+- [x] **CI:** the `windows-latest` jobs pass on GitHub (after a fix for coarse folder times, 2026-10-12).
 
 ## macOS checks (no Mac available yet)
 
-Reviewed by reading the code on 2026-10-11; the `macos-latest` CI jobs will run the unit tests.
+Reviewed by reading the code on 2026-10-11; the `macos-latest` CI jobs run the unit tests and pass.
 Only a Mac can check:
 
 - [ ] **iTerm2:** `agent-footprint open` splits the agent's own session (targeted through
