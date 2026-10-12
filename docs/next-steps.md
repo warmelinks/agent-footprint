@@ -1,6 +1,6 @@
 # Next steps
 
-State as of 2026-10-11: everything is committed on `main`, local only (no remote yet).
+State as of 2026-10-11: everything is committed on `master` and pushed to `github.com/warmelinks/agent-footprint`.
 Tests pass: 77 passed, 2 skipped on Linux; 76 passed, 3 skipped under Windows Python 3.13
 (`uv run python -m pytest`, which installs the `dev` group). Skips are platform-specific tests.
 
@@ -10,12 +10,12 @@ syncing, Windows) is done except for the items under "Open from the review" belo
 ## Before publishing
 
 - [ ] **Repository and package name.** `pyproject.toml`, the README and the dashboard link to
-      `github.com/stevenwarmelink/agent-footprint` (placeholder). Check that `agent-footprint` is free on
+      `github.com/warmelinks/agent-footprint`. Check that `agent-footprint` is free on
       PyPI, create the GitHub repo, and update the links if the name differs.
 - [ ] **Commit author email.** The commits use `steven@soundappraisal.eu` from the local git config;
       decide which address to use publicly before pushing.
 - [ ] **GitHub settings** the workflows rely on:
-  - "Allow auto-merge", plus a branch protection rule on `main` that requires the CI checks (`automerge.yml`).
+  - "Allow auto-merge", plus a branch protection rule on `master` that requires the CI checks (`automerge.yml`).
   - A PyPI trusted publisher for `release.yml` (environment `pypi`).
   - Labels `ecologits` and `data`, used by the scheduled jobs.
 - [ ] **First release:** tag `v0.1.0`; `release.yml` builds and publishes.

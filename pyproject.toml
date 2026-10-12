@@ -34,7 +34,7 @@ zstd = ["zstandard>=0.22; python_version < '3.14'"]
 agent-footprint = "agent_footprint.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/stevenwarmelink/agent-footprint"
+Homepage = "https://github.com/warmelinks/agent-footprint"
 Methodology = "https://ecologits.ai/latest/methodology/llm_inference/"
 
 [tool.hatch.build.targets.wheel]
