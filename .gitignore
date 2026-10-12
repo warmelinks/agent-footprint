@@ -7,3 +7,6 @@ build/
 *.egg-info/
 *.log
 *.swp
+
+# Internal working notes, kept local only
+docs/next-steps.md
