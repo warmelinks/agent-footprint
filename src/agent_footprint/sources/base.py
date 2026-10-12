@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 RECENT_S = 3600        # quick syncs only stat files written this recently...
 RESCAN_S = 30.0        # ...and list every log file (and re-check which are recent) this often
 DIRS_S = 2.0           # how often a quick sync checks the log folders for new files
+RACY_S = 2.0           # a folder time this close to the scan may hide a later change (coarse clock ticks)
 
 
 @dataclass
@@ -86,7 +87,7 @@ class FileSource:
         if not quick or not self.known or now - self.last_discover >= RESCAN_S or self._new_files(now):
             self.last_discover = now
             self.known = {u.path: u for u in self.units()}
-            self.dirs = _folders(self.root, self.known)
+            self.dirs = _folders(self.root, self.known, now)
             paths = list(self.known.values())
             self.recent = [u for u in paths if _mtime(u.path) >= now - RECENT_S]
         else:
@@ -163,9 +164,14 @@ class FileSource:
         return recs, offset + end + 1
 
 
-def _folders(root, known):
+def _folders(root, known, now):
     """{folder: mtime} for root and every folder between it and the known log files: a new
-    file, or a new subfolder (e.g. Codex's next YYYY/MM/DD), changes one of their mtimes."""
+    file, or a new subfolder (e.g. Codex's next YYYY/MM/DD), changes one of their mtimes.
+
+    File times advance in clock ticks (~15.6 ms on Windows, a few ms on Linux), so a folder
+    changed just after this scan can keep the time read here. Folders changed within RACY_S of
+    the scan are stored as None, which makes the next check scan again (as git does for "racy"
+    index entries)."""
     out = {}
     for path in known:
         d = os.path.dirname(path)
@@ -175,7 +181,7 @@ def _folders(root, known):
                 break
             d = os.path.dirname(d)
     out.setdefault(root, _mtime(root))
-    return out
+    return {d: None if m >= now - RACY_S else m for d, m in out.items()}
 
 
 def _mtime(path):

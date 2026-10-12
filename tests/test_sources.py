@@ -369,7 +369,8 @@ class QuickSyncTest(Tmp):
         from agent_footprint.sources import base
         old = os.path.join(self.dir, "proj", "old.jsonl")
         self.append(old, _claude_line("req_old", 1))
-        os.utime(old, (time.time() - 7200, time.time() - 7200))
+        for p in (old, os.path.dirname(old), self.dir):  # an old transcript in folders untouched since
+            os.utime(p, (time.time() - 7200, time.time() - 7200))
         src = ClaudeSource(self.dir)
         src.sync(self.store)
         checked = []
@@ -383,6 +384,21 @@ class QuickSyncTest(Tmp):
         with mock.patch.object(base, "RESCAN_S", 1e9):
             src.sync(self.store, quick=True)
         self.assertIn("req_new", self.by_id())
+
+    def test_a_folder_changed_within_the_same_clock_tick_as_the_scan_is_found(self):
+        from agent_footprint.sources import base
+        self.append(os.path.join(self.dir, "proj", "a.jsonl"), _claude_line("req_a", 1))
+        src = ClaudeSource(self.dir)
+        src.sync(self.store)
+        scanned = os.stat(self.dir)
+        self.append(os.path.join(self.dir, "proj2", "b.jsonl"), _claude_line("req_b", 1))
+        # File times advance in clock ticks (~15.6 ms on Windows), so a folder can change after the
+        # scan read its time and still show the same time.
+        os.utime(self.dir, ns=(scanned.st_atime_ns, scanned.st_mtime_ns))
+        src.last_dirs = 0  # as if DIRS_S had passed
+        with mock.patch.object(base, "RESCAN_S", 1e9):
+            src.sync(self.store, quick=True)
+        self.assertIn("req_b", self.by_id())
 
 
 class SeqTest(unittest.TestCase):
