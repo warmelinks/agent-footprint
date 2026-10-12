@@ -1,0 +1,32 @@
+# Yearly: open an issue listing the hand-maintained figures in factors.json that are due for a review
+# (scripts/stale_factors.py). Skipped when this year's issue is already open.
+name: stale-factors
+
+on:
+  schedule:
+    - cron: "0 6 2 1 *"   # 2 January, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Open an issue if figures are due
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="Figures due for review in $(date +%Y)"
+          if python3 scripts/stale_factors.py > "$RUNNER_TEMP/due.md"; then
+            cat "$RUNNER_TEMP/due.md"
+            exit 0
+          fi
+          if gh issue list --state open --label data --search "\"$title\" in:title" --json number --jq '.[0].number' | grep -q .; then
+            echo "Issue already open: $title"
+          else
+            gh issue create --title "$title" --label data --body-file "$RUNNER_TEMP/due.md"
+          fi

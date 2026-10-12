@@ -1,0 +1,16 @@
+# EcoLogits releases bring new models and grid data: Dependabot proposes each one, CI tests it and
+# automerge.yml merges it when green. Actions are bumped too, but merged by hand.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    allow:
+      - dependency-name: ecologits
+    labels: [ecologits]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

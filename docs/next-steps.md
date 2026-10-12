@@ -15,14 +15,18 @@ syncing, Windows) is done except for the items under "Open from the review" belo
 - [x] **PyPI trusted publisher** for `release.yml` (environment `pypi`).
 - [x] **First release:** `v0.1.0` published by `release.yml` on 2026-10-12. The PyPI page shows that
       release's README (still "Until it is on PyPI…"); the next release updates it.
-- [ ] **Missing workflows.** Only `release.yml` exists. The CI test matrix (Linux, Windows, macOS),
-      Dependabot with `automerge.yml`, the monthly `update_factors.py` job and the yearly
-      `stale_factors.py` job described in `docs/details.md` were lost from the history and need
-      writing again.
+- [x] **Workflows** (written again 2026-10-12, the originals were lost from the history): `ci.yml`
+      (Linux, Windows, macOS × Python 3.10 and 3.14; weekly also the newest EcoLogits), `dependabot.yml`
+      + `automerge.yml`, `update-factors.yml` (monthly) and `stale-factors.yml` (yearly). All have
+      passed locally; check their first runs on GitHub.
 - [ ] **GitHub settings** those workflows rely on:
-  - "Allow auto-merge", plus a branch protection rule on `master` that requires the CI checks (`automerge.yml`).
+  - Settings → General: "Allow auto-merge".
+  - A branch protection rule on `master` that requires the `ci-ok` check (it fails when any test job fails).
   - Settings → Actions → Workflow permissions: read and write, and allow Actions to create pull requests.
-  - Labels `ecologits` and `data`, used by the scheduled jobs.
+  - Labels `ecologits` and `data`, used by Dependabot and the scheduled jobs.
+- **Known quirk:** pull requests opened by `update-factors.yml` don't start `ci.yml` (GitHub doesn't
+  trigger workflows from `GITHUB_TOKEN` actions), so `ci-ok` never reports and the rule blocks the merge.
+  The job runs the tests itself; close and reopen the pull request to start CI, or merge as admin.
 
 ## Verification still missing
 

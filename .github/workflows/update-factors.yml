@@ -1,0 +1,30 @@
+# Monthly: refetch the per-person electricity and greenhouse-gas baselines from Our World in Data
+# and open (or update) a pull request for review. No pull request when nothing changed.
+name: update-factors
+
+on:
+  schedule:
+    - cron: "0 6 3 * *"   # the 3rd of each month, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - run: python3 scripts/update_factors.py --summary "$RUNNER_TEMP/summary.md"
+      # Pull requests opened with GITHUB_TOKEN don't start the ci workflow, so test here.
+      - run: uv run --extra zstd python -m pytest
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: update-factors
+          commit-message: Update per-person baselines from Our World in Data
+          title: Update per-person baselines from Our World in Data
+          body-path: ${{ runner.temp }}/summary.md
+          labels: data
+          add-paths: src/agent_footprint/data/countries.json

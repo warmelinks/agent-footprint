@@ -1,0 +1,22 @@
+# Turns on auto-merge for Dependabot's EcoLogits pull requests. GitHub merges them once the checks
+# required by the branch protection rule on master pass. Needs "Allow auto-merge" in the repo settings.
+name: automerge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ecologits:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@v2
+      - if: steps.meta.outputs.dependency-names == 'ecologits'
+        run: gh pr merge --auto --squash "$PR"
+        env:
+          PR: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

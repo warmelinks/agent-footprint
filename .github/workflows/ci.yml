@@ -1,0 +1,49 @@
+# Tests on every push to master and every pull request, on Linux, Windows and macOS with the oldest
+# and newest supported Python. Weekly, it also tests against the newest EcoLogits release, even one
+# outside the range in pyproject.toml, so a breaking release shows up before users meet it.
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.10", "3.14"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv run --extra zstd python -m pytest
+
+  newest-ecologits:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --extra zstd
+      - run: uv pip install --upgrade ecologits
+      - run: uv run --no-sync python -c "import importlib.metadata as m; print('ecologits', m.version('ecologits'))"
+      - run: uv run --no-sync python -m pytest
+
+  # The one check to require in branch protection, so the rule needn't list every matrix job.
+  ci-ok:
+    if: always()
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.test.result }}" = success
