@@ -1,4 +1,4 @@
-"""Terminal view of your coding agents' life-cycle footprint. No server needed.
+"""Terminal view of your coding agents' footprint. No server needed.
 
     agent-footprint watch                 # today, all sessions and agents, live
     agent-footprint watch --week          # this week (also --month, --year; optional value, e.g. --month 2026-09)
@@ -375,9 +375,9 @@ def render(w, shown, st, width, now, live=True, compact=False):
     n = s["n"]
     if w.view.period:
         prep = "so far" if d.get("is_now") else "on" if w.view.period.kind == "day" else "in"
-        note = "life-cycle carbon %s %s" % (prep, d["label"])
+        note = "carbon %s %s" % (prep, d["label"])
     else:
-        note = "life-cycle carbon so far"
+        note = "carbon so far"
     lines.append("  " + st.bold(fmt_si(shown["hero"], CARBON_UNITS)) + st.dim("  " + note))
     if n:
         unit = next(u for u in reversed(CARBON_UNITS) if mid(t["carbon"]) >= u[0] or u is CARBON_UNITS[0])
@@ -410,7 +410,9 @@ def render(w, shown, st, width, now, live=True, compact=False):
         lines.append("    " + meter + " " + st.dim(end))
         foot = {"energy": fmt_si(mid(t["energy"]), ENERGY_UNITS) + " of electricity",
                 "water": fmt_si(mid(t["water"]), WATER_UNITS) + " of water consumed",
-                "carbon": fmt_si(mid(t["carbon"]), CARBON_UNITS) + " incl. hardware manufacturing"}[k]
+                "carbon": fmt_si(mid(t["carbon"]), CARBON_UNITS) + " incl. hardware manufacturing, excl. training"}[k]
+        if len(foot) > width - 4 and k == "carbon":  # narrow window: keep the part that's easy to assume wrongly
+            foot = fmt_si(mid(t["carbon"]), CARBON_UNITS) + " excl. model training"
         if caption:
             foot = (foot + " · " + caption) if len(foot) + 3 + len(caption) <= width - 4 else caption
         lines.append("    " + st.dim(foot))

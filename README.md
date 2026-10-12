@@ -1,9 +1,11 @@
 # agent-footprint
 
 A live view of the environmental footprint of your AI coding agents: electricity, water, carbon and
-mineral/metal depletion, across the full life cycle (running the servers plus a time-share of
-manufacturing them). It reads the logs your agents already write, compares the numbers to everyday
-things (phone charges, glasses of water, km driven) and shows day, week, month and year overviews.
+mineral/metal depletion from answering your requests, counting both running the servers and a
+time-share of manufacturing them. Training the models is not included (see
+[What's included](#whats-included)). It reads the logs your agents already write, compares the
+numbers to everyday things (phone charges, glasses of water, km driven) and shows day, week, month
+and year overviews.
 The impact model is [EcoLogits](https://ecologits.ai).
 
 ## Install
@@ -89,6 +91,29 @@ Each response's model and token counts go into EcoLogits'
 agents re-send large cached contexts, input tokens are also counted, at a small weight relative to
 output tokens (configurable; set to 0 for pure EcoLogits figures). Treat the results as
 order-of-magnitude estimates, not measurements.
+
+### What's included
+
+Like EcoLogits, this covers inference only: the hardware that answers your requests, from making it
+to running it.
+
+| | Included? |
+|---|---|
+| Electricity for the servers (GPUs and the rest), plus datacenter overhead such as cooling (PUE) | ✅ |
+| Water consumed by datacenter cooling and by generating that electricity | ✅ |
+| Manufacturing the GPUs and servers, as a share of their lifetime: carbon, minerals and metals, primary energy | ✅ |
+| Water used in manufacturing the hardware | ❌ not modelled by EcoLogits |
+| Input tokens (weighted; an addition to EcoLogits, which counts output tokens only) | ✅ configurable |
+| **Training the models** | ❌ |
+| The hardware's end-of-life (recycling, disposal) | ❌ |
+| Networking, and your own device | ❌ |
+| Requests an agent doesn't log (for example, title generation) | ❌ |
+| Sessions on other machines (cloud or SSH sessions) | ❌ |
+
+Training is a large one-off cost that providers don't publish for these models, and how to divide it
+over every request a model ever serves is an open question, so a per-request share would mostly be
+guesswork. Training, end-of-life, networking and end-user devices are outside
+[EcoLogits' scope](https://ecologits.ai/latest/methodology/).
 
 More in [docs/details.md](docs/details.md): log locations, history, the methodology and its
 assumptions, how figures are kept current, and configuration.

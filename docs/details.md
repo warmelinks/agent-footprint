@@ -109,8 +109,11 @@ electricity mixes. The tests check the results against EcoLogits' own API.
 - **Input tokens:** EcoLogits counts only generated tokens. Agent sessions re-send large cached
   contexts on every request, so input tokens are added as weighted "output-token equivalents" (new
   input ×0.05, cache reads ×0.005). Set the weights to 0 in the config for pure EcoLogits figures.
-- **Not counted:** requests an agent doesn't log (for example, title generation), sessions that ran on
-  other machines (cloud or SSH sessions), networking, and your own device.
+- **Not counted:** training the models, the hardware's end-of-life, networking and your own device
+  (all outside [EcoLogits' scope](https://ecologits.ai/latest/methodology/)), water used in making the
+  hardware (not modelled), requests an agent doesn't log (for example, title generation), and sessions
+  that ran on other machines (cloud or SSH sessions). "Life cycle" here means the life cycle of the
+  hardware serving the requests (making it and running it), not of the model.
 
 - **GitHub Copilot's input tokens** are estimated: it logs the prompt size of the last model call of each
   request only. The calls in a request are taken to grow linearly from the previous request's prompt

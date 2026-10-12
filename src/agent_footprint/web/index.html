@@ -375,7 +375,7 @@ const BUCKET_WORD = { day: 'hour', week: 'day', month: 'day', year: 'month' };
 function describeView() {
   const v = state.view;
   if (!v) return { lead: '', extra: '' };
-  if (v.kind === 'session') return { lead: "So far, this session's life-cycle carbon footprint is about", extra: v.tool ? toolLabel(v.tool) : '' };
+  if (v.kind === 'session') return { lead: "So far, this session's carbon footprint is about", extra: v.tool ? toolLabel(v.tool) : '' };
   const n = state.summary.session_count, sessions = `${n} session${n === 1 ? '' : 's'}`;
   const so = v.is_now;
   const lead = v.period === 'day'
@@ -415,7 +415,7 @@ function update(bumped) {
   const feet = {
     energy: fmtSI(mid(t.energy), ENERGY_UNITS).join(' ') + ' of electricity',
     water: fmtSI(mid(t.water), WATER_UNITS).join(' ') + ' of water consumed',
-    carbon: fmtSI(mid(t.carbon), CARBON_UNITS).join(' ') + ' incl. hardware manufacturing',
+    carbon: fmtSI(mid(t.carbon), CARBON_UNITS).join(' ') + ' incl. hardware manufacturing, excl. model training',
   };
   for (const k of KINDS) {
     const el = $(`.tile[data-k="${k}"]`);
@@ -591,6 +591,7 @@ function renderDetails() {
   $('#detail-body').innerHTML = `
     <p>Estimates follow the <a href="https://ecologits.ai/latest/methodology/llm_inference/" target="_blank" rel="noopener">EcoLogits</a> life-cycle method (ecologits ${esc(a.ecologits_version)}).
     It covers electricity for running the servers (the <em>usage</em> phase) and a time-share of manufacturing the GPUs and servers (the <em>embodied</em> phase).
+    It covers inference only: <strong>training the models is not included</strong>, nor the hardware's end-of-life (both outside EcoLogits' scope).
     Most providers don't publish model sizes, so ranges are wide. Treat these as order-of-magnitude figures.</p>
     <h3>Life-cycle indicators</h3>
     <div class="scroll"><table>
@@ -623,7 +624,7 @@ function renderDetails() {
       ${a.compare_country ? '' : `<li>Set <code>compare_country</code> (e.g. "NLD") in the config to also compare with your country's average.</li>`}
       ${KINDS.map(k => a.ladders[k].steps.map(st => `<li>1 ${esc(st.one)} = ${st.size.toLocaleString()} ${{ energy: 'Wh', water: 'L', carbon: 'g CO₂e' }[k]}: ${esc(st.source)}${st.as_of ? ` (as of ${st.as_of})` : ''}</li>`).join('')).join('')}
     </ul>
-    <p>Not counted: requests an agent makes without logging them (for example, title generation), sessions that ran on other machines, networking, and your own device.</p>`;
+    <p>Not counted: training the models, the hardware's end-of-life, requests an agent makes without logging them (for example, title generation), sessions that ran on other machines, networking, and your own device.</p>`;
 }
 $('#details').addEventListener('toggle', () => renderDetails());
 
