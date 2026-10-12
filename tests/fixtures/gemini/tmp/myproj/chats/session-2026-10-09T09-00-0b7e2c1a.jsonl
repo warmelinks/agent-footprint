@@ -1,0 +1,8 @@
+{"sessionId":"0b7e2c1a-aaaa-bbbb-cccc-000000000001","projectHash":"9f8e7d","startTime":"2026-10-09T07:00:00.000Z","lastUpdated":"2026-10-09T07:00:00.000Z","kind":"main"}
+{"id":"m1","timestamp":"2026-10-09T07:00:01.000Z","type":"user","content":[{"text":"Explain the build failure"}]}
+{"$set":{"lastUpdated":"2026-10-09T07:00:01.000Z"}}
+{"id":"m2","timestamp":"2026-10-09T07:00:05.000Z","type":"gemini","content":"","thoughts":[],"model":"gemini-3.7-flash","toolCalls":[{"id":"c1","name":"read_file","args":{},"status":"success","timestamp":"2026-10-09T07:00:05.000Z"}]}
+{"id":"m2","timestamp":"2026-10-09T07:00:05.000Z","type":"gemini","content":"","thoughts":[],"model":"gemini-3.7-flash","tokens":{"input":9000,"output":300,"cached":6000,"thoughts":150,"tool":50,"total":9500},"toolCalls":[{"id":"c1","name":"read_file","args":{},"status":"success","timestamp":"2026-10-09T07:00:05.000Z"}]}
+{"$patch":{"id":"m2","toolCalls":[{"id":"c1","result":"ok"}]}}
+{"id":"m3","timestamp":"2026-10-09T07:00:09.000Z","type":"gemini","content":"The linker can't find libfoo.","model":"gemini-3.7-flash","tokens":{"input":9600,"output":120,"cached":9000,"thoughts":0,"tool":0,"total":9720}}
+{"$rewindTo":"m3"}

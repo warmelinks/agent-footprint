@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-footprint"
+version = "0.1.0"
+description = "Live environmental footprint (energy, water, carbon) of AI coding agents: Claude Code, Codex CLI, Gemini CLI, OpenCode, Mistral Vibe and GitHub Copilot, computed with EcoLogits."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Steven Warmelink" }]
+keywords = ["ecologits", "carbon", "llm", "claude-code", "codex", "gemini-cli", "opencode", "mistral-vibe", "github-copilot", "sustainability"]
+classifiers = [
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    # New EcoLogits releases bring new models and grid data; upgrades within this range are picked
+    # up by `agent-footprint update`. CI tests against the latest release weekly.
+    "ecologits>=0.11,<1",
+]
+
+[project.optional-dependencies]
+zstd = ["zstandard>=0.22; python_version < '3.14'"]
+
+[project.scripts]
+agent-footprint = "agent_footprint.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/stevenwarmelink/agent-footprint"
+Methodology = "https://ecologits.ai/latest/methodology/llm_inference/"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_footprint"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

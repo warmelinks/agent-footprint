@@ -1,0 +1,161 @@
+{
+  "_about": "Everyday comparisons and per-person baselines used to put footprints in context. The impact model itself comes from the ecologits package.",
+  "_ladders_help": "Each indicator is shown in the largest step whose size fits at least once. size is in the indicator's base unit (Wh, L, gCO2e). percent: show values below 1 as a percentage.",
+  "ladders": {
+    "energy": {
+      "title": "Electricity",
+      "icon": "phone",
+      "steps": [
+        {
+          "size": 15,
+          "one": "phone charge",
+          "many": "phone charges",
+          "percent": true,
+          "source": "Typical smartphone battery ~4,000 mAh x 3.85 V = 15 Wh",
+          "as_of": 2024,
+          "review_years": 3
+        },
+        {
+          "size": 100,
+          "one": "boiled kettle",
+          "many": "boiled kettles",
+          "source": "Heating 1 L of water from 20 to 100 C = 4.186 kJ/kg.K x 80 K = 93 Wh, ~100 Wh with kettle losses",
+          "as_of": null,
+          "review_years": null
+        },
+        {
+          "size": 1000,
+          "one": "load of laundry",
+          "many": "loads of laundry",
+          "source": "A 40-60 C wash cycle ~1 kWh (EU energy label figures for washing machines)",
+          "as_of": 2024,
+          "review_years": 5
+        },
+        {
+          "size": 9700,
+          "one": "day of a home's electricity",
+          "many": "days of a home's electricity",
+          "source": "Average EU household ~3,525 kWh/year = ~9.7 kWh/day (Eurostat 2024: 712.5 TWh household electricity, nrg_bal_c, over 202.2 million households, lfst_hhnhtych)",
+          "as_of": 2026,
+          "review_years": 2
+        },
+        {
+          "size": 3525000,
+          "one": "year of a home's electricity",
+          "many": "years of a home's electricity",
+          "source": "Average EU household ~3,525 kWh/year (Eurostat 2024: 712.5 TWh household electricity, nrg_bal_c, over 202.2 million households, lfst_hhnhtych)",
+          "as_of": 2026,
+          "review_years": 2
+        }
+      ]
+    },
+    "water": {
+      "title": "Water",
+      "icon": "water",
+      "steps": [
+        {
+          "size": 0.25,
+          "one": "glass of water",
+          "many": "glasses of water",
+          "source": "A 250 mL drinking glass",
+          "as_of": null,
+          "review_years": null
+        },
+        {
+          "size": 10,
+          "one": "bucket",
+          "many": "buckets",
+          "source": "A 10 L bucket",
+          "as_of": null,
+          "review_years": null
+        },
+        {
+          "size": 150,
+          "one": "bathtub",
+          "many": "bathtubs",
+          "source": "A full bath ~150 L",
+          "as_of": null,
+          "review_years": null
+        },
+        {
+          "size": 50000,
+          "one": "backyard pool",
+          "many": "backyard pools",
+          "source": "A 50 m3 backyard pool",
+          "as_of": null,
+          "review_years": null
+        },
+        {
+          "size": 2500000,
+          "one": "Olympic pool",
+          "many": "Olympic pools",
+          "source": "50 x 25 x 2 m = 2,500 m3",
+          "as_of": null,
+          "review_years": null
+        }
+      ]
+    },
+    "carbon": {
+      "title": "Carbon",
+      "icon": "car",
+      "steps": [
+        {
+          "size": 0.162,
+          "one": "metre driven",
+          "many": "metres driven",
+          "source": "Average petrol car ~162 gCO2e/km (UK DESNZ 2026 conversion factors, 0.16152 kg/km)",
+          "as_of": 2026,
+          "review_years": 1
+        },
+        {
+          "size": 162,
+          "one": "km driven",
+          "many": "km driven",
+          "source": "Average petrol car ~162 gCO2e/km (UK DESNZ 2026 conversion factors, 0.16152 kg/km)",
+          "as_of": 2026,
+          "review_years": 1
+        },
+        {
+          "size": 800000,
+          "one": "transatlantic flight",
+          "many": "transatlantic flights",
+          "source": "One economy seat London to New York one-way, ~0.8 tCO2e incl. non-CO2 effects and fuel supply (UK DESNZ 2026 long-haul economy: 0.117 kg/pkm with RF + 0.025 well-to-tank, x 5,570 km = 0.79 t)",
+          "as_of": 2026,
+          "review_years": 1
+        }
+      ]
+    }
+  },
+  "_person_day_help": "One person's share of a day, per indicator, in the indicator's base unit (Wh, L, g CO2e). Electricity and greenhouse gases per person come from data/countries.json (Our World in Data, refreshed by scripts/update_factors.py) for the world and for the country set as compare_country in the config. Water footprints and the 1.5 °C budget are fixed, sourced values below. Shown as a percentage of one person-day, or as person-days once past 100%.",
+  "person_day": {
+    "long": {
+      "energy": "the %s daily electricity generation per person",
+      "carbon": "the %s daily greenhouse-gas emissions per person (incl. land use)"
+    },
+    "water": {
+      "WLD": {
+        "long": "the world-average daily water footprint per person (all water used to make what one consumes: food, goods and household water, incl. rainwater in crops and water needed to dilute pollution)",
+        "size": 3795,
+        "source": "Global average water footprint of consumption 1996-2005: 1,385 m3/yr per capita (Mekonnen & Hoekstra 2011, National Water Footprint Accounts, UNESCO-IHE Value of Water Research Report 50) / 365 days",
+        "as_of": 2026,
+        "review_years": 5
+      },
+      "NLD": {
+        "long": "the Dutch-average daily water footprint per person (all water used to make what one consumes, at home or abroad: food, goods and household water, incl. rainwater in crops and water needed to dilute pollution)",
+        "size": 6300,
+        "source": "Water footprint of Dutch consumption 1996-2005: ~2,300 m3/yr per capita (Van Oel, Mekonnen & Hoekstra 2009, Ecological Economics 69(1)) / 365 days",
+        "as_of": 2026,
+        "review_years": 5
+      }
+    },
+    "carbon_budget": {
+      "label": "1.5 °C budget",
+      "long": "a 1.5 °C-compatible daily budget per person",
+      "size": 6850,
+      "source": "1.5 °C-compatible lifestyle target for 2030: 2.5 tCO2e per person per year (IGES/Aalto, 1.5-Degree Lifestyles, 2019) / 365 days",
+      "as_of": 2026,
+      "review_years": 5
+    }
+  },
+  "_review_help": "as_of: the year a figure's source refers to; review_years: how often to re-check it (null = a physical quantity that doesn't go stale). scripts/stale_factors.py lists what is due; a yearly workflow opens an issue."
+}

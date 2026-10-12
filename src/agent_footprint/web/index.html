@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Footprint</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0: #f4f3ef;
+    --surface-1: #fcfcfb;
+    --border: #e4e2dc;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #7a7974;
+    --energy: #1baf7a;  /* aqua */
+    --water: #2a78d6;   /* blue */
+    --carbon: #eb6834;  /* orange */
+    --track: #ecebe6;
+    --live: #0ca30c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-0: #121211;
+      --surface-1: #1a1a19;
+      --border: #2e2e2b;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #8f8e86;
+      --energy: #199e70;
+      --water: #3987e5;
+      --carbon: #d95926;
+      --track: #2a2a27;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #121211; --surface-1: #1a1a19; --border: #2e2e2b;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #8f8e86;
+    --energy: #199e70; --water: #3987e5; --carbon: #d95926; --track: #2a2a27;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface-0); color: var(--text-primary);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 20px; }
+  header h1 { font-size: 15px; font-weight: 600; margin: 0; flex: 1; min-width: 200px; }
+  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+  .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+  .live.on::before { background: var(--live); animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  select {
+    font: inherit; font-size: 13px; color: var(--text-primary); background: var(--surface-1);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; max-width: 100%;
+  }
+
+  .hero { margin: 8px 0 28px; }
+  .hero .lead { color: var(--text-secondary); font-size: 16px; margin: 0 0 4px; }
+  .hero .figure { font-size: clamp(44px, 9vw, 72px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; }
+  .hero .figure small { font-size: .42em; font-weight: 500; color: var(--text-secondary); letter-spacing: 0; }
+  .hero .sub { color: var(--text-muted); font-size: 13px; margin-top: 6px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 18px 16px; position: relative; overflow: hidden;
+  }
+  .tile .head { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; }
+  .tile .head svg { width: 18px; height: 18px; color: var(--accent); }
+  .tile .value { font-size: 40px; font-weight: 600; letter-spacing: -0.02em; margin-top: 8px; line-height: 1.1; }
+  .tile .unit { font-size: 15px; color: var(--text-secondary); min-height: 1.45em; transition: opacity .25s; }
+  .tile .unit.swap { opacity: 0; }
+  .tile .meter { display: flex; gap: 3px; height: 10px; margin: 14px 0 4px; }
+  .tile .meter .seg { flex: 1; min-width: 2px; border-radius: 2px; background: var(--track); overflow: hidden; }
+  .tile .meter .seg i { display: block; height: 100%; background: var(--accent); width: 0; }
+  .tile .scale { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+  .tile .scale .per { text-align: center; }
+  .tile .foot { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .tile .share { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+  .tile .share h4 { margin: 0 0 6px; font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .tile .share .row { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+  .tile .share .row b { color: var(--text-primary); font-weight: 600; }
+  .tile .share .bar { height: 4px; border-radius: 2px; background: var(--track); margin: 3px 0 8px; overflow: hidden; }
+  .tile .share .bar i { display: block; height: 100%; background: var(--accent); width: 0; }
+  .tile.bump { animation: bump .6s ease-out; }
+  @keyframes bump { 0% { box-shadow: 0 0 0 0 var(--accent); } 100% { box-shadow: 0 0 0 10px transparent; } }
+  .tile[data-k="energy"] { --accent: var(--energy); }
+  .tile[data-k="water"] { --accent: var(--water); }
+  .tile[data-k="carbon"] { --accent: var(--carbon); }
+
+  .ticker {
+    margin: 16px 0 0; min-height: 22px; font-size: 13px; color: var(--text-secondary);
+    display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline;
+  }
+  .ticker b { color: var(--text-primary); font-weight: 600; }
+  .ticker .flash { animation: flash 1.2s ease-out; }
+  @keyframes flash { from { background: var(--track); } to { background: transparent; } }
+
+  .trend svg { display: block; width: 100%; height: 120px; overflow: visible; }
+
+  details { margin-top: 24px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 0 18px; }
+  summary { cursor: pointer; padding: 14px 0; font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+  details[open] summary { border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  details h3 { font-size: 13px; font-weight: 600; margin: 18px 0 6px; }
+  details p, details li { font-size: 13px; color: var(--text-secondary); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 500; color: var(--text-muted); }
+  td .r { color: var(--text-muted); font-size: 11px; display: block; }
+  details ul { padding-left: 18px; }
+  details a { color: var(--water); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0;
+    background: var(--text-primary); color: var(--surface-1); padding: 10px 16px; border-radius: 8px;
+    font-size: 14px; transition: all .35s; pointer-events: none; max-width: calc(100% - 32px);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .empty { color: var(--text-muted); font-size: 14px; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-1); padding: 2px; }
+  .seg button {
+    font: inherit; font-size: 13px; color: var(--text-secondary); background: none; border: 0; border-radius: 6px;
+    padding: 4px 10px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--track); color: var(--text-primary); font-weight: 600; }
+  .nav { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-secondary); }
+  .nav button {
+    font: inherit; width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface-1); color: var(--text-primary); cursor: pointer;
+  }
+  .nav button:disabled { opacity: .35; cursor: default; }
+  .nav span { min-width: 7em; text-align: center; }
+  [hidden] { display: none !important; }
+
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-top: 12px; }
+  .card > h2 { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin: 0 0 8px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .card > h2 .spacer { flex: 1; }
+  .linkbtn { font: inherit; font-size: 12px; color: var(--water); background: none; border: 0; cursor: pointer; padding: 0; }
+  .histos { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .histo h3 { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin: 0 0 4px; display: flex; align-items: center; gap: 6px; }
+  .histo h3 i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .histo h3 small { color: var(--text-muted); font-weight: 400; margin-left: auto; }
+  .histo svg { display: block; width: 100%; height: 140px; overflow: visible; }
+  .histo { position: relative; }
+  .tip {
+    position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px; font-size: 12px; color: var(--text-primary); white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12); display: none; z-index: 2;
+  }
+  .contrib { display: grid; gap: 20px; }
+  .contrib h3 { font-size: 13px; font-weight: 600; margin: 0 0 6px; }
+  .badge {
+    display: inline-block; font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border);
+    border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; white-space: nowrap;
+  }
+  td .muted { color: var(--text-muted); font-size: 11px; }
+  td.title { max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
+  .sharebar { display: inline-block; width: 48px; height: 4px; border-radius: 2px; background: var(--track); vertical-align: middle; margin-left: 6px; overflow: hidden; }
+  .sharebar i { display: block; height: 100%; background: var(--carbon); }
+  .notice { font-size: 13px; color: var(--text-secondary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; }
+  footer { margin-top: 24px; font-size: 12px; color: var(--text-muted); }
+  footer a { color: var(--text-muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Agent footprint</h1>
+    <span class="live" id="live">connecting…</span>
+    <div class="controls">
+      <div class="seg" id="kinds" role="group" aria-label="Period">
+        <button data-kind="year">Year</button><button data-kind="month">Month</button><button data-kind="week">Week</button><button data-kind="day" aria-pressed="true">Day</button>
+      </div>
+      <div class="nav" id="nav"><button id="prev" aria-label="Previous period">‹</button><span id="period-label">today</span><button id="next" aria-label="Next period">›</button></div>
+      <select id="session" aria-label="Session"><option value="">All sessions</option><option value="latest">Follow newest session</option></select>
+    </div>
+  </header>
+  <div class="notice" id="notice" hidden></div>
+
+  <section class="hero">
+    <p class="lead" id="hero-lead">So far today, your coding agents add up to about</p>
+    <div class="figure"><span id="hero-value">0</span> <small id="hero-unit">g CO₂e</small></div>
+    <div class="sub" id="hero-sub">Waiting for the first response…</div>
+  </section>
+
+  <section class="tiles">
+    <div class="tile" data-k="energy">
+      <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><span>Electricity</span></div>
+      <div class="value">0</div><div class="unit">&nbsp;</div>
+      <div class="meter"></div><div class="scale"><span>0</span><span class="per"></span><span class="max"></span></div><div class="foot">&nbsp;</div><div class="share"></div>
+    </div>
+    <div class="tile" data-k="water">
+      <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.7s-6 6.6-6 11.3a6 6 0 0 0 12 0c0-4.7-6-11.3-6-11.3z"/></svg><span>Water</span></div>
+      <div class="value">0</div><div class="unit">&nbsp;</div>
+      <div class="meter"></div><div class="scale"><span>0</span><span class="per"></span><span class="max"></span></div><div class="foot">&nbsp;</div><div class="share"></div>
+    </div>
+    <div class="tile" data-k="carbon">
+      <div class="head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5z"/><circle cx="8" cy="17" r="2"/><circle cx="16" cy="17" r="2"/></svg><span>Carbon</span></div>
+      <div class="value">0</div><div class="unit">&nbsp;</div>
+      <div class="meter"></div><div class="scale"><span>0</span><span class="per"></span><span class="max"></span></div><div class="foot">&nbsp;</div><div class="share"></div>
+    </div>
+  </section>
+
+
+  <div class="ticker" id="ticker"></div>
+
+  <section class="card" id="histo-card">
+    <h2><span id="histo-title">Per hour</span><span class="spacer"></span><button class="linkbtn" id="histo-table-toggle">Show as table</button></h2>
+    <div class="histos" id="histos">
+      <div class="histo" data-k="energy"><h3><i style="background:var(--energy)"></i>Electricity<small></small></h3><svg role="img"></svg><div class="tip"></div></div>
+      <div class="histo" data-k="water"><h3><i style="background:var(--water)"></i>Water<small></small></h3><svg role="img"></svg><div class="tip"></div></div>
+      <div class="histo" data-k="carbon"><h3><i style="background:var(--carbon)"></i>Carbon<small></small></h3><svg role="img"></svg><div class="tip"></div></div>
+    </div>
+    <div class="scroll" id="histo-table" hidden></div>
+  </section>
+
+  <section class="card trend" id="trend-card" hidden>
+    <h2><span>Carbon over this session</span>&nbsp;(g CO₂e, shaded = uncertainty range)</h2>
+    <div style="position:relative"><svg id="chart" role="img" aria-label="Cumulative carbon over the session"></svg><div class="tip" id="tip"></div></div>
+  </section>
+
+  <section class="card" id="contrib-card">
+    <h2>What contributed most</h2>
+    <div class="contrib">
+      <div id="top-sessions"></div>
+      <div id="top-models"></div>
+      <div id="top-tools"></div>
+    </div>
+  </section>
+
+  <details id="details">
+    <summary>What's behind these numbers?</summary>
+    <div id="detail-body"></div>
+  </details>
+  <footer id="footer"></footer>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const state = { quietUntil: 0, view: null, summary: null, assumptions: null, tools: {}, info: null, displayed: {}, level: {}, wanted: 'day:today', allSessions: false, histoTable: false };
+const KINDS = ['energy', 'water', 'carbon'];
+const LABEL = { energy: 'Electricity', water: 'Water', carbon: 'Carbon' };
+const TOKEN_LABEL = { output: 'Generated text (output)', input: 'New input', cache_creation: 'Cache writes', cache_read: 'Cache reads (re-sent context)' };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+
+// ---------- number formatting ----------
+function fmt(n) {
+  const a = Math.abs(n);
+  if (a === 0) return '0';
+  if (a < 10) return n.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: a < 1 ? 2 : 1 });
+  if (a < 100) return n.toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  return Math.round(n).toLocaleString();
+}
+function fmtPct(p) { // at least two significant digits, so tiny shares don't round to 0
+  if (p === 0 || p >= 0.1) return fmt(p) + '%';
+  return p.toFixed(1 - Math.floor(Math.log10(p))) + '%';
+}
+function personDay(base, size) { // a percentage of one person's day, or person-days past 100%
+  const n = base / size;
+  return n < 1 ? fmtPct(n * 100) : `${fmt(n)} person-day${Math.abs(n - 1) < 1e-9 ? '' : 's'}`;
+}
+function pickUnit(v, units) { let pick = units[0]; for (const u of units) if (Math.abs(v) >= u[0]) pick = u; return pick; }
+function fmtSI(v, units) { // units: [[factor, label], ...] ascending
+  const pick = pickUnit(v, units);
+  return [fmt(v / pick[0]), pick[1]];
+}
+const CARBON_UNITS = [[1e-3, 'mg CO₂e'], [1, 'g CO₂e'], [1e3, 'kg CO₂e'], [1e6, 't CO₂e']];
+const ENERGY_UNITS = [[1e-3, 'mWh'], [1, 'Wh'], [1e3, 'kWh'], [1e6, 'MWh']];
+const WATER_UNITS = [[1e-3, 'mL'], [1, 'L'], [1e3, 'm³']];
+const BASE_UNITS = { energy: ENERGY_UNITS, water: WATER_UNITS, carbon: CARBON_UNITS };
+const add2 = (a, b) => [a[0] + b[0], a[1] + b[1]];
+const mid = p => (p[0] + p[1]) / 2;
+
+// ---------- the ladder: pick a relatable unit ----------
+function ladder(kind, base) {
+  const steps = state.assumptions.ladders[kind].steps;
+  let i = 0;
+  while (i + 1 < steps.length && base / steps[i + 1].size >= 1) i++;
+  const s = steps[i], n = base / s.size;
+  let value, unit;
+  if (s.percent && n < 1) { value = fmt(n * 100) + '%'; unit = 'of a ' + s.one; }
+  else { value = fmt(n); unit = Math.abs(n - 1) < 1e-9 ? s.one : s.many; }
+  return { i, value, unit, n, step: s };
+}
+
+// ---------- the gauge: a round-numbered axis split into unit blocks ----------
+const tick = v => Number.isInteger(v) ? v.toLocaleString() : fmt(v);
+function niceCeil(n) {
+  if (n <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(n)));
+  for (const f of [1, 2, 5, 10]) if (f * p >= n * (1 - 1e-9)) return f * p;
+  return 10 * p;
+}
+function scale(n, step) {
+  if (n <= 1) return { top: 1, segs: 10, end: step.percent ? '100%' : '1',
+    per: step.percent ? 'each block = 10%' : `each block = 0.1 ${step.one}` };
+  const top = niceCeil(n);
+  const segs = top <= 20 ? top : (String(top)[0] === '2' ? 20 : 10);
+  const per = top / segs;
+  return { top, segs, end: top.toLocaleString(), per: per === 1 ? `each block = 1 ${step.one}` : `each block = ${per.toLocaleString()} ${step.many}` };
+}
+
+// ---------- animation ----------
+const ease = t => 1 - Math.pow(1 - t, 3);
+let anim = null;
+function animateTo(target) {
+  const from = { ...state.displayed };
+  const t0 = performance.now(), dur = 900;
+  cancelAnimationFrame(anim);
+  const frame = now => {
+    const p = Math.min(1, (now - t0) / dur), e = ease(p);
+    for (const k of [...KINDS, 'hero']) {
+      const a = from[k] ?? 0, b = target[k];
+      state.displayed[k] = a + (b - a) * e;
+    }
+    paint();
+    if (p < 1) anim = requestAnimationFrame(frame);
+  };
+  anim = requestAnimationFrame(frame);
+}
+
+function paint() {
+  if (!state.assumptions) return;
+  for (const k of KINDS) {
+    const el = $(`.tile[data-k="${k}"]`);
+    const L = ladder(k, state.displayed[k] || 0);
+    $('.value', el).textContent = L.value;
+    const u = $('.unit', el);
+    if (u.textContent !== L.unit) u.textContent = L.unit;
+    const S = scale(L.n, L.step), meter = $('.meter', el);
+    if (meter.children.length !== S.segs) meter.innerHTML = '<span class="seg"><i></i></span>'.repeat(S.segs);
+    const filled = Math.min(1, L.n / S.top) * S.segs;
+    [...meter.children].forEach((seg, j) => { seg.firstChild.style.width = (Math.max(0, Math.min(1, filled - j)) * 100).toFixed(1) + '%'; });
+    $('.scale .per', el).textContent = S.per;
+    $('.scale .max', el).textContent = S.end;
+    if (state.level[k] !== undefined && L.i > state.level[k] && performance.now() > state.quietUntil) {
+      u.classList.add('swap'); setTimeout(() => u.classList.remove('swap'), 250);
+      toast(`${state.assumptions.ladders[k].title}: now counting in ${L.step.many}`);
+    }
+    state.level[k] = L.i;
+    paintShare(k, $('.share', el), state.displayed[k] || 0);
+  }
+  const [hv, hu] = fmtSI(state.displayed.hero || 0, CARBON_UNITS);
+  $('#hero-value').textContent = hv; $('#hero-unit').textContent = hu;
+}
+
+function paintShare(k, el, base) {
+  const baselines = state.assumptions.person_day[k];
+  if (el.children.length !== 1 + 2 * baselines.length) {
+    el.innerHTML = `<h4>Share of one person's day</h4>` + baselines.map(b =>
+      `<div class="row" title="${b.size.toLocaleString()} ${fmtSI(1, BASE_UNITS[k])[1]} per day is ${esc(b.long)}. ${esc(b.source)}">` +
+      `<span>${b.label[0].toUpperCase() + b.label.slice(1)} · ${fmtSI(b.size, BASE_UNITS[k]).join(' ')}</span><b></b></div><div class="bar"><i></i></div>`).join('');
+  }
+  baselines.forEach((b, j) => {
+    el.querySelectorAll('.row b')[j].textContent = personDay(base, b.size);
+    el.querySelectorAll('.bar i')[j].style.width = (Math.min(1, base / b.size) * 100).toFixed(2) + '%';
+  });
+}
+
+// ---------- view description ----------
+const toolLabel = t => state.tools[t] || t || '';
+const isPeriod = () => state.view?.kind === 'period';
+const BUCKET_WORD = { day: 'hour', week: 'day', month: 'day', year: 'month' };
+function describeView() {
+  const v = state.view;
+  if (!v) return { lead: '', extra: '' };
+  if (v.kind === 'session') return { lead: "So far, this session's life-cycle carbon footprint is about", extra: v.tool ? toolLabel(v.tool) : '' };
+  const n = state.summary.session_count, sessions = `${n} session${n === 1 ? '' : 's'}`;
+  const so = v.is_now;
+  const lead = v.period === 'day'
+    ? (so ? 'So far today, your coding agents add up to about' : `On ${v.label}, your coding agents added up to about`)
+    : (so ? `So far ${v.label}, your coding agents add up to about` : `In ${v.label}, your coding agents added up to about`);
+  return { lead, extra: sessions };
+}
+
+function syncControls() {
+  const v = state.view, period = isPeriod();
+  $$('#kinds button').forEach(b => b.setAttribute('aria-pressed', String(period && b.dataset.kind === v.period)));
+  $('#nav').hidden = !period;
+  if (period) {
+    $('#period-label').textContent = v.label;
+    $('#next').disabled = !v.next;
+    $('#session').value = '';
+  } else {
+    const sel = $('#session');
+    if (v.follow) sel.value = 'latest';
+    else {
+      if (![...sel.options].some(o => o.value === v.id)) sel.add(new Option(sessionLabel({ id: v.id, title: v.title, tool: v.tool, last: v.last }), v.id));
+      sel.value = v.id;
+    }
+  }
+  $('#histo-card').hidden = !period;
+  $('#trend-card').hidden = period;
+}
+
+function update(bumped) {
+  const s = state.summary, t = s.totals, view = describeView();
+  $('#hero-lead').textContent = view.lead;
+  animateTo({ energy: mid(t.energy), water: mid(t.water), carbon: mid(t.carbon), hero: mid(t.carbon) });
+  const unit = pickUnit(mid(t.carbon), CARBON_UNITS);
+  $('#hero-sub').textContent = s.n
+    ? `Likely between ${fmt(t.carbon[0] / unit[0])} and ${fmt(t.carbon[1] / unit[0])} ${unit[1]} · ${view.extra ? view.extra + ' · ' : ''}${s.n.toLocaleString()} model responses · ${s.tokens.toLocaleString()} tokens processed`
+    : (isPeriod() ? 'No agent activity in this period.' : 'Waiting for the first response…');
+  const feet = {
+    energy: fmtSI(mid(t.energy), ENERGY_UNITS).join(' ') + ' of electricity',
+    water: fmtSI(mid(t.water), WATER_UNITS).join(' ') + ' of water consumed',
+    carbon: fmtSI(mid(t.carbon), CARBON_UNITS).join(' ') + ' incl. hardware manufacturing',
+  };
+  for (const k of KINDS) {
+    const el = $(`.tile[data-k="${k}"]`);
+    $('.foot', el).textContent = feet[k];
+    if (bumped) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  }
+  syncControls();
+  drawCharts();
+  renderContrib();
+  renderDetails();
+  renderNotice();
+}
+
+// ---------- latest-response ticker ----------
+function ticker(d) {
+  if (!d || mid(d.energy) <= 0) return;
+  const phone = mid(d.energy) / state.assumptions.ladders.energy.steps[0].size * 100;
+  const [cv, cu] = fmtSI(mid(d.carbon), CARBON_UNITS), [wv, wu] = fmtSI(mid(d.water), WATER_UNITS);
+  const el = $('#ticker');
+  el.innerHTML = `<span>Latest:</span> <b>+${fmt(phone)}% of a phone charge</b> <span>+${cv} ${cu}</span> <span>+${wv} ${wu} water</span> <span>${d.tokens.toLocaleString()} tokens · ${esc(d.model)}</span>`;
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+// ---------- charts ----------
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+function drawCharts() { if (isPeriod()) { drawHistograms(); renderHistoTable(); } else drawSeries(); }
+
+// One column chart per indicator: hours of a day, days of a week/month, months of a year.
+function drawHistograms() {
+  const s = state.summary, buckets = s.buckets || [];
+  $('#histo-title').textContent = `Per ${BUCKET_WORD[state.view.period]}, ${state.view.label}`;
+  for (const k of KINDS) {
+    const box = $(`.histo[data-k="${k}"]`), svg = $('svg', box), tip = $('.tip', box);
+    const vals = buckets.map(b => mid(b[k]));
+    const maxRaw = Math.max(0, ...vals);
+    const unit = pickUnit(maxRaw || 1, BASE_UNITS[k]);
+    const top = niceCeil(maxRaw / unit[0] || 1);
+    $('h3 small', box).textContent = unit[1];
+    svg.setAttribute('aria-label', `${LABEL[k]} per ${BUCKET_WORD[state.view.period]}, ${unit[1]}`);
+    const W = svg.clientWidth || 300, H = 140, padL = 36, padB = 18, padT = 6, padR = 2;
+    const n = buckets.length || 1, slot = (W - padL - padR) / n;
+    const bw = Math.max(1, Math.min(24, slot - 2));
+    const y = v => padT + (H - padT - padB) * (1 - v / top);
+    const muted = css('--text-muted'), grid = css('--border'), color = css('--' + k), ink = css('--text-primary');
+    const ticks = [0, top / 2, top].map(v => `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}" stroke-width="1"/><text x="${padL - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="${muted}">${tick(v)}</text>`).join('');
+    const every = Math.max(1, Math.ceil(28 / slot)); // label spacing that fits
+    const cur = buckets.findIndex(b => b.key === s.current_bucket); // always labelled; neighbours make room
+    let bars = '', labels = '', hits = '';
+    buckets.forEach((b, i) => {
+      const v = vals[i] / unit[0], x = padL + i * slot + (slot - bw) / 2, yv = y(v), h = (H - padB) - yv;
+      if (h > 0.25) {
+        const r = Math.min(4, bw / 2, h);
+        bars += `<path d="M${x},${H - padB} V${yv + r} Q${x},${yv} ${x + r},${yv} H${x + bw - r} Q${x + bw},${yv} ${x + bw},${yv + r} V${H - padB} Z" fill="${color}"/>`;
+      }
+      const current = b.key === s.current_bucket;
+      if (current || (i % every === 0 && (cur < 0 || Math.abs(i - cur) >= every)))
+        labels += `<text x="${padL + i * slot + slot / 2}" y="${H - 4}" text-anchor="middle" font-size="10" fill="${current ? ink : muted}" font-weight="${current ? 600 : 400}">${esc(b.short)}</text>`;
+      hits += `<rect data-i="${i}" x="${padL + i * slot}" y="${padT}" width="${slot}" height="${H - padT}" fill="transparent"/>`;
+    });
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = ticks + bars + labels + hits;
+    svg.onmousemove = e => {
+      const i = +e.target.dataset?.i; if (Number.isNaN(i) || e.target.dataset.i === undefined) return;
+      const b = buckets[i], u = pickUnit(mid(b[k]) || unit[0], BASE_UNITS[k]);
+      tip.innerHTML = `<b>${esc(b.long)}</b><br>${fmt(mid(b[k]) / u[0])} ${u[1]} <span style="color:${muted}">(${fmt(b[k][0] / u[0])}–${fmt(b[k][1] / u[0])})</span><br>${b.n.toLocaleString()} response${b.n === 1 ? '' : 's'}`;
+      tip.style.display = 'block';
+      const bx = svg.getBoundingClientRect(), left = (padL + (i + 0.5) * slot) * bx.width / W;
+      tip.style.left = Math.max(0, Math.min(left - tip.offsetWidth / 2, bx.width - tip.offsetWidth)) + 'px';
+      tip.style.top = '-6px';
+    };
+    svg.onmouseleave = () => { tip.style.display = 'none'; };
+  }
+}
+
+function renderHistoTable() {
+  const box = $('#histo-table');
+  box.hidden = !state.histoTable;
+  $('#histos').hidden = state.histoTable;
+  $('#histo-table-toggle').textContent = state.histoTable ? 'Show as chart' : 'Show as table';
+  if (!state.histoTable) return;
+  const rows = state.summary.buckets.filter(b => b.n);
+  box.innerHTML = `<table><tr><th>${BUCKET_WORD[state.view.period][0].toUpperCase() + BUCKET_WORD[state.view.period].slice(1)}</th><th>Responses</th><th>Electricity</th><th>Water</th><th>Carbon</th></tr>
+    ${rows.map(b => `<tr><td>${esc(b.long)}</td><td>${b.n.toLocaleString()}</td><td>${range(b.energy, ENERGY_UNITS)}</td><td>${range(b.water, WATER_UNITS)}</td><td>${range(b.carbon, CARBON_UNITS)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">No activity</td></tr>'}</table>`;
+}
+$('#histo-table-toggle').addEventListener('click', () => { state.histoTable = !state.histoTable; renderHistoTable(); if (!state.histoTable) drawHistograms(); });
+
+// A single session: cumulative carbon with uncertainty band.
+function drawSeries() {
+  const svg = $('#chart'), pts0 = state.summary.series || [];
+  const W = svg.clientWidth || 600, H = 120, padL = 44, padB = 18, padT = 6;
+  if (!pts0.length) { svg.innerHTML = ''; return; }
+  const pts = [[pts0[0][0], 0, 0, '']].concat(pts0);
+  const max = pts[pts.length - 1][2] || 1, n = pts.length - 1 || 1;
+  const x = i => padL + (W - padL - 4) * i / n, y = v => padT + (H - padT - padB) * (1 - v / max);
+  const band = pts.map((p, i) => `${x(i)},${y(p[2])}`).join(' ') + ' ' + pts.map((p, i) => `${x(i)},${y(p[1])}`).reverse().join(' ');
+  const line = pts.map((p, i) => `${x(i)},${y((p[1] + p[2]) / 2)}`).join(' ');
+  const c = css('--carbon'), muted = css('--text-muted'), grid = css('--border');
+  const ticks = [0, max / 2, max].map(v => `<line x1="${padL}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}" stroke-width="1"/><text x="${padL - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="${muted}">${fmt(v)}</text>`).join('');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `${ticks}
+    <polygon points="${band}" fill="${c}" opacity=".18"/>
+    <polyline points="${line}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>
+    <text x="${padL}" y="${H - 2}" font-size="11" fill="${muted}">start</text>
+    <text x="${W}" y="${H - 2}" font-size="11" fill="${muted}" text-anchor="end">now · ${state.summary.n} responses</text>
+    <line id="xh" y1="${padT}" y2="${H - padB}" stroke="${muted}" stroke-width="1" visibility="hidden"/>
+    <circle id="dot" r="4" fill="${c}" stroke="${css('--surface-1')}" stroke-width="2" visibility="hidden"/>`;
+  svg.onmousemove = e => {
+    const b = svg.getBoundingClientRect(), px = (e.clientX - b.left) * W / b.width;
+    const i = Math.max(1, Math.min(n, Math.round((px - padL) / (W - padL - 4) * n)));
+    const p = pts[i]; if (!p) return;
+    const xh = $('#xh', svg), dot = $('#dot', svg), tip = $('#tip');
+    xh.setAttribute('x1', x(i)); xh.setAttribute('x2', x(i)); xh.setAttribute('visibility', 'visible');
+    dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y((p[1] + p[2]) / 2)); dot.setAttribute('visibility', 'visible');
+    tip.innerHTML = `<b>${fmtSI((p[1] + p[2]) / 2, CARBON_UNITS).join(' ')}</b> so far<br>${new Date(p[0] * 1000).toLocaleTimeString()} · ${esc(p[3])}`;
+    tip.style.display = 'block';
+    const left = x(i) * b.width / W;
+    tip.style.left = Math.min(left + 10, b.width - tip.offsetWidth) + 'px'; tip.style.top = '0px';
+  };
+  svg.onmouseleave = () => { $('#tip').style.display = 'none'; ['#xh', '#dot'].forEach(s => $(s, svg)?.setAttribute('visibility', 'hidden')); };
+}
+
+// ---------- what contributed most ----------
+function range(p, units) {
+  const m = mid(p), u = pickUnit(m, units);
+  return `${fmt(m / u[0])} ${u[1]}<span class="r">${fmt(p[0] / u[0])}–${fmt(p[1] / u[0])}</span>`;
+}
+function share(v) {
+  const tot = mid(state.summary.totals.carbon), p = tot ? mid(v) / tot * 100 : 0;
+  return `${fmtPct(p)}<span class="sharebar"><i style="width:${Math.min(100, p).toFixed(1)}%"></i></span>`;
+}
+const when = epoch => {
+  if (!epoch) return '';
+  const d = new Date(epoch * 1000), sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : d.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
+function renderContrib() {
+  const s = state.summary, period = isPeriod();
+  const ses = $('#top-sessions');
+  ses.hidden = !period;
+  if (period) {
+    const all = s.by_session, shown = state.allSessions ? all : all.slice(0, 10);
+    ses.innerHTML = `<h3>Sessions</h3><div class="scroll"><table>
+      <tr><th>Session</th><th>Started</th><th>Responses</th><th>Carbon</th><th>Share</th></tr>
+      ${shown.map(r => `<tr><td class="title" title="${esc(r.id)}${r.project ? ' · ' + esc(r.project) : ''}"><a href="#" data-session="${esc(r.id)}" style="color:inherit">${esc(r.title || r.id.split(':').pop().slice(0, 8))}</a><span class="badge">${esc(toolLabel(r.tool))}</span></td>
+        <td>${when(r.first)}</td><td>${r.n.toLocaleString()}</td><td>${range(r.carbon, CARBON_UNITS)}</td><td>${share(r.carbon)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">No sessions in this period</td></tr>'}
+    </table></div>${s.session_count > 10 ? `<button class="linkbtn" id="more-sessions">${state.allSessions ? 'Show top 10' : `Show all ${Math.min(s.session_count, s.by_session.length)}${s.session_count > s.by_session.length ? ` of ${s.session_count}` : ''}`}</button>` : ''}`;
+    $('#more-sessions')?.addEventListener('click', () => { state.allSessions = !state.allSessions; renderContrib(); });
+    $$('a[data-session]', ses).forEach(a => a.addEventListener('click', e => { e.preventDefault(); go(a.dataset.session); }));
+  }
+  $('#top-models').innerHTML = `<h3>Models</h3><div class="scroll"><table>
+    <tr><th>Model</th><th>Responses</th><th>Output tokens</th><th>Carbon</th><th>Share</th></tr>
+    ${s.by_model.map(m => `<tr><td>${esc(m.model)}${m.tools.map(t => `<span class="badge">${esc(toolLabel(t))}</span>`).join('')}${m.ecologits_model !== m.model.replace(/\[.*\]$/, '') ? `<br><span class="muted">estimated as ${esc(m.ecologits_model)}</span>` : ''}</td>
+      <td>${m.n.toLocaleString()}</td><td>${m.output.toLocaleString()}</td><td>${range(m.carbon, CARBON_UNITS)}</td><td>${share(m.carbon)}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">No responses yet</td></tr>'}
+  </table></div>`;
+  const tools = $('#top-tools');
+  tools.hidden = !period || s.by_tool.length < 1;
+  if (!tools.hidden) tools.innerHTML = `<h3>Agents</h3><div class="scroll"><table>
+    <tr><th>Agent</th><th>Responses</th><th>Electricity</th><th>Water</th><th>Carbon</th><th>Share</th></tr>
+    ${s.by_tool.map(t => `<tr><td>${esc(toolLabel(t.tool))}</td><td>${t.n.toLocaleString()}</td><td>${range(t.energy, ENERGY_UNITS)}</td><td>${range(t.water, WATER_UNITS)}</td><td>${range(t.carbon, CARBON_UNITS)}</td><td>${share(t.carbon)}</td></tr>`).join('')}
+  </table></div>`;
+}
+
+// ---------- details ----------
+function renderDetails() {
+  if (!$('#details').open || !state.assumptions) return;
+  const s = state.summary, t = s.totals, a = state.assumptions, ph = s.phases;
+  const g = p => p.map(x => x * 1000);
+  // EcoLogits reports ADPe in kg Sb-eq and primary energy in MJ.
+  const SB = [[1e-9, 'µg Sb-eq'], [1e-6, 'mg Sb-eq'], [1e-3, 'g Sb-eq']], MJ = [[1e-3, 'kJ'], [1, 'MJ'], [1e3, 'GJ']];
+  const src = Object.fromEntries(s.by_source.map(r => [r.source, r.carbon]));
+  const energyMid = Object.values(s.by_token).reduce((x, y) => x + y, 0);
+  const used = s.providers.length ? s.providers : ['anthropic'];
+  $('#detail-body').innerHTML = `
+    <p>Estimates follow the <a href="https://ecologits.ai/latest/methodology/llm_inference/" target="_blank" rel="noopener">EcoLogits</a> life-cycle method (ecologits ${esc(a.ecologits_version)}).
+    It covers electricity for running the servers (the <em>usage</em> phase) and a time-share of manufacturing the GPUs and servers (the <em>embodied</em> phase).
+    Most providers don't publish model sizes, so ranges are wide. Treat these as order-of-magnitude figures.</p>
+    <h3>Life-cycle indicators</h3>
+    <div class="scroll"><table>
+      <tr><th>Indicator</th><th>Running servers</th><th>Making hardware</th><th>Total</th></tr>
+      <tr><td>Climate change</td><td>${range(g(ph.usage.gwp), CARBON_UNITS)}</td><td>${range(g(ph.embodied.gwp), CARBON_UNITS)}</td><td>${range(t.carbon, CARBON_UNITS)}</td></tr>
+      <tr><td>Water consumption</td><td>${range(ph.usage.wcf, WATER_UNITS)}</td><td>not modelled</td><td>${range(ph.usage.wcf, WATER_UNITS)}</td></tr>
+      <tr><td>Minerals &amp; metals (ADPe)</td><td>${range(ph.usage.adpe, SB)}</td><td>${range(ph.embodied.adpe, SB)}</td><td>${range(add2(ph.usage.adpe, ph.embodied.adpe), SB)}</td></tr>
+      <tr><td>Primary energy</td><td>${range(ph.usage.pe, MJ)}</td><td>${range(ph.embodied.pe, MJ)}</td><td>${range(add2(ph.usage.pe, ph.embodied.pe), MJ)}</td></tr>
+      <tr><td>Electricity at the datacenter</td><td>${range(t.energy, ENERGY_UNITS)}</td><td>–</td><td>${range(t.energy, ENERGY_UNITS)}</td></tr>
+    </table></div>
+    <h3>Main conversation and subagents</h3>
+    <div class="scroll"><table>
+      <tr><th>Part</th><th>Carbon</th><th>Share</th></tr>
+      <tr><td>Main conversation</td><td>${range(src.main || [0, 0], CARBON_UNITS)}</td><td>${share(src.main || [0, 0])}</td></tr>
+      <tr><td>Subagents</td><td>${range(src.subagent || [0, 0], CARBON_UNITS)}</td><td>${share(src.subagent || [0, 0])}</td></tr>
+    </table></div>
+    <h3>Energy by token type</h3>
+    <div class="scroll"><table>
+      <tr><th>Token type</th><th>Share of energy</th></tr>
+      ${Object.entries(s.by_token).map(([k, v]) => `<tr><td>${TOKEN_LABEL[k]}</td><td>${energyMid ? (v / energyMid * 100).toFixed(0) : 0}%</td></tr>`).join('')}
+    </table></div>
+    <h3>Assumptions (edit ${esc(state.info?.config || 'config.json')} to change)</h3>
+    <ul>
+      ${used.map(p => { const d = a.providers[p]; return `<li>${esc(p)}: electricity grid ${esc(d.electricity_zone)} (${(d.grid.gwp * 1000).toFixed(0)} gCO₂e/kWh, ${d.grid.wue} L water/kWh generated), datacenter PUE ${d.datacenter_pue.join('–')}, on-site WUE ${d.datacenter_wue.join('–')} L/kWh</li>`; }).join('')}
+      <li>Batch size ${a.batch_size}, hardware lifetime ${a.hardware_lifetime_years} years, NVIDIA H100 servers</li>
+      <li>Input tokens weighted as output-token equivalents (an extension beyond EcoLogits): new input ×${a.prefill_weight.input}, cache writes ×${a.prefill_weight.cache_creation}, cache reads ×${a.prefill_weight.cache_read}.
+        ${s.ecologits_only && mid(t.carbon) ? `With EcoLogits' own method (output tokens only) this view would be ${fmtSI(mid(s.ecologits_only.carbon), CARBON_UNITS).join(' ')} instead of ${fmtSI(mid(t.carbon), CARBON_UNITS).join(' ')} (×${(mid(t.carbon) / mid(s.ecologits_only.carbon)).toFixed(1)}). ` : ''}<a href="https://github.com/stevenwarmelink/agent-footprint#why-input-tokens-are-weighted" target="_blank" rel="noopener">Why and how sure</a></li>
+      ${s.warnings.map(w => `<li>Estimate: ${esc(w)}</li>`).join('')}
+      ${KINDS.map(k => a.person_day[k].map(b => `<li>One person's day, ${esc(b.label)} = ${fmtSI(b.size, BASE_UNITS[k]).join(' ')}: ${esc(b.source)}</li>`).join('')).join('')}
+      ${a.compare_country ? '' : `<li>Set <code>compare_country</code> (e.g. "NLD") in the config to also compare with your country's average.</li>`}
+      ${KINDS.map(k => a.ladders[k].steps.map(st => `<li>1 ${esc(st.one)} = ${st.size.toLocaleString()} ${{ energy: 'Wh', water: 'L', carbon: 'g CO₂e' }[k]}: ${esc(st.source)}${st.as_of ? ` (as of ${st.as_of})` : ''}</li>`).join('')).join('')}
+    </ul>
+    <p>Not counted: requests an agent makes without logging them (for example, title generation), sessions that ran on other machines, networking, and your own device.</p>`;
+}
+$('#details').addEventListener('toggle', () => renderDetails());
+
+function renderNotice() {
+  const i = state.info || {}, msgs = [...(i.notices || [])];
+  if (i.update) msgs.unshift(i.update);
+  $('#notice').hidden = !msgs.length;
+  $('#notice').innerHTML = msgs.map(esc).join('<br>');
+  const h = i.history || {};
+  const found = Object.keys(i.sources || {}).map(toolLabel).join(', ') || 'no agent logs found';
+  $('#footer').innerHTML = `Reading ${esc(found)} · history since ${h.since ? new Date(h.since * 1000).toLocaleDateString() : '–'} (${(h.records || 0).toLocaleString()} responses, kept after agents purge their logs) · agent-footprint ${esc(i.version || '')} · ecologits ${esc(i.ecologits || '')}`;
+}
+
+// ---------- toast ----------
+let toastTimer;
+function toast(msg) {
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ---------- live connection ----------
+let es;
+function connect(wanted) {
+  es?.close();
+  state.wanted = wanted;
+  try { history.replaceState(null, '', '#' + wanted); } catch (e) {}
+  es = new EventSource('/api/stream?view=' + encodeURIComponent(wanted));
+  const live = $('#live');
+  es.onopen = () => { live.textContent = 'live'; live.classList.add('on'); };
+  es.onerror = () => { live.textContent = 'reconnecting…'; live.classList.remove('on'); };
+  es.addEventListener('reset', ev => {
+    const d = JSON.parse(ev.data);
+    // No "now counting in …" toasts while the numbers count up to a freshly loaded view.
+    Object.assign(state, { view: d.view, summary: d.summary, assumptions: d.assumptions, tools: d.tools, info: d.info, level: {}, allSessions: false, quietUntil: performance.now() + 1500 });
+    const v = d.view;
+    $('#ticker').textContent = v.kind === 'period' ? `${v.label[0].toUpperCase() + v.label.slice(1)}: every session, all agents and projects` : v.title ? `Session: "${v.title}"` : '';
+    update(false);
+  });
+  es.addEventListener('update', ev => {
+    const d = JSON.parse(ev.data);
+    state.view = d.view; state.summary = d.summary;
+    ticker(d.latest);
+    update(true);
+  });
+  es.addEventListener('error', ev => { if (ev.data) toast(JSON.parse(ev.data).message); });
+}
+const go = wanted => connect(wanted);
+
+$$('#kinds button').forEach(b => b.addEventListener('click', () => go(b.dataset.kind + ':' + (b.dataset.kind === 'day' ? 'today' : 'current'))));
+$('#prev').addEventListener('click', () => state.view?.prev && go(state.view.prev));
+$('#next').addEventListener('click', () => state.view?.next && go(state.view.next));
+
+function sessionLabel(s) {
+  const d = s.last ? new Date(s.last * 1000).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
+  return `${d} · ${toolLabel(s.tool) ? toolLabel(s.tool) + ' · ' : ''}${s.title || (s.id || '').split(':').pop().slice(0, 8)}`;
+}
+async function loadSessions() {
+  try {
+    const sessions = await fetch('/api/sessions').then(r => r.json());
+    const sel = $('#session'), g = sel.appendChild(Object.assign(document.createElement('optgroup'), { label: 'One session' }));
+    for (const s of sessions) { state.tools[s.tool] ||= s.tool_label; g.appendChild(new Option(sessionLabel(s), s.id)); }
+    if (state.view) syncControls();
+  } catch (e) { /* the picker just keeps the defaults */ }
+}
+$('#session').addEventListener('change', e => go(e.target.value || 'day:today'));
+window.addEventListener('resize', () => state.summary && drawCharts());
+loadSessions();
+window.addEventListener('hashchange', () => { const v = decodeURIComponent(location.hash.slice(1)); if (v && v !== state.wanted) connect(v); });
+connect(decodeURIComponent(location.hash.slice(1)) || 'day:today');
+</script>
+</body>
+</html>

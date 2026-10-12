@@ -1,0 +1,41 @@
+{
+  "_help": "Edit and save; both views pick changes up within a second. null = EcoLogits' default for the provider serving the model. PUE/WUE accept a number or [low, high].",
+
+  "electricity_zone": null,
+  "datacenter_pue": null,
+  "datacenter_wue": null,
+  "batch_size": 64,
+  "hardware_lifetime_years": 3,
+
+  "_providers_help": "Per-provider overrides, e.g. {\"openai\": {\"electricity_zone\": \"USA\", \"datacenter_pue\": 1.2}}. Providers: anthropic, openai, google_genai, mistralai, cohere, huggingface_hub.",
+  "providers": {},
+
+  "_prefill_help": "EcoLogits counts only output tokens. These weights add input tokens as 'output-token equivalents' (prefill is far cheaper per token than generation, cache reads cheaper still). Set all to 0 for pure EcoLogits numbers.",
+  "prefill_weight": {
+    "input": 0.05,
+    "cache_creation": 0.05,
+    "cache_read": 0.005
+  },
+
+  "_sources_help": "Which agents to read, and optionally where their data lives: null = the agent's default location (following its own environment variables), or a path, or a list of paths. Folders reported by session-start hooks and, under WSL, Windows-side installs are added automatically.",
+  "sources": {
+    "claude": {"enabled": true, "path": null},
+    "codex": {"enabled": true, "path": null},
+    "gemini": {"enabled": true, "path": null},
+    "opencode": {"enabled": true, "path": null},
+    "vibe": {"enabled": true, "path": null},
+    "copilot": {"enabled": true, "path": null}
+  },
+
+  "_launch_help": "What `agent-footprint open` (run by the session-start hooks from `agent-footprint setup`) does. terminal: auto, or one of tmux, zellij, kitty, wezterm, terminator, iterm2, windows-terminal, gnome-terminal, konsole, apple-terminal, none. fallback when no terminal can be used: browser (start the dashboard and open it once) or none.",
+  "launch": {"terminal": "auto", "fallback": "browser", "split_percent": 40},
+
+  "_compare_help": "Also compare with one country's per-person average: an ISO 3166 alpha-3 code such as \"NLD\", \"DEU\" or \"USA\" (null = world only).",
+  "compare_country": null,
+
+  "_titles_help": "Name sessions after their first prompt: stores the first 90 characters of each session's first prompt in the history. Off by default; turning it off again erases stored titles. Project folder names are always stored.",
+  "store_titles": false,
+
+  "auto_update_check": true,
+  "port": 8765
+}
