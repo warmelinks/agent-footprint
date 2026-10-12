@@ -20,7 +20,7 @@ jobs:
       - run: python3 scripts/update_factors.py --summary "$RUNNER_TEMP/summary.md"
       # Pull requests opened with GITHUB_TOKEN don't start the ci workflow, so test here.
       - run: uv run --extra zstd python -m pytest
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           branch: update-factors
           commit-message: Update per-person baselines from Our World in Data
