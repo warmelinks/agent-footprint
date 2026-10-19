@@ -422,6 +422,22 @@ class SeqTest(unittest.TestCase):
             shutil.rmtree(d)
 
 
+class LockTest(Tmp):
+    def test_a_file_changed_without_new_records_leaves_no_write_lock(self):
+        path = os.path.join(self.dir, "proj", "s1.jsonl")
+        self.append(path, _claude_line("r1", 10))
+        db = os.path.join(self.dir, "history.sqlite")
+        a, b = Store(db), Store(db)
+        self.addCleanup(a.close), self.addCleanup(b.close)
+        src = ClaudeSource(self.dir)
+        src.sync(a)
+        self.append(path, json.dumps({"type": "user", "timestamp": "2026-10-05T10:01:00Z"}) + "\n")
+        self.assertEqual(src.sync(a, quick=True), 0)
+        b.db.execute("PRAGMA busy_timeout = 0")
+        b.upsert_session("claude:s2", "claude")  # the other process can still write
+        b.commit()
+
+
 class HistoryLocationTest(unittest.TestCase):
     def test_moves_history_from_the_cache_folder(self):
         d = tempfile.mkdtemp()

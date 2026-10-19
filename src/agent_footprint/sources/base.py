@@ -98,8 +98,10 @@ class FileSource:
                 changed += self._sync_unit(store, unit)
             except OSError:
                 continue
-        if changed or not quick:
-            store.commit()
+            finally:
+                # Per file, and also when a file changed without new records: an open write
+                # transaction holds SQLite's lock, and a process syncing alongside times out on it.
+                store.commit()
         return changed
 
     def _new_files(self, now):
