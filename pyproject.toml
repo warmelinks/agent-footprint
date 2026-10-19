@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-footprint"
-version = "0.1.1"
+version = "0.1.2"
 description = "Live environmental footprint (energy, water, carbon) of AI coding agents: Claude Code, Codex CLI, Gemini CLI, OpenCode, Mistral Vibe and GitHub Copilot, computed with EcoLogits."
 readme = "README.md"
 license = "MIT"
