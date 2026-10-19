@@ -18,12 +18,15 @@ def lohi(v):
 
 class ModelTest(unittest.TestCase):
     def test_matches_ecologits_reference(self):
-        # Reference values from ecologits.tracers.utils.llm_impacts('anthropic', ..., request_latency=1e9)
+        # Compared live against EcoLogits, so its data updates don't break the test. No provider is
+        # passed, so name -> provider resolution is covered too; the model must exist, not be skipped.
+        self.assertIsNotNone(models.find_model("anthropic", "claude-opus-5-5"))
+        ref = llm_impacts("anthropic", "claude-opus-5-5", 1000, request_latency=1e9)
         opus = model.compute("claude-opus-5-5", {"output": 1000}, ECOLOGITS_ONLY)
-        self.assertAlmostEqual(opus["energy_kwh"][0], 0.003182604494524164, places=12)
-        self.assertAlmostEqual(opus["energy_kwh"][1], 0.006028983944440019, places=12)
-        self.assertAlmostEqual(opus["usage"]["wcf"][1], 0.024166674437376703, places=12)
-        self.assertAlmostEqual(opus["embodied"]["gwp"][0], 8.684913079470198e-05, places=14)
+        for got, want in ((opus["energy_kwh"], ref.energy.value), (opus["usage"]["wcf"], ref.usage.wcf.value),
+                          (opus["embodied"]["gwp"], ref.embodied.gwp.value)):
+            for g, w in zip(got, lohi(want)):
+                self.assertAlmostEqual(g, w, delta=abs(w) * 1e-9 + 1e-18)
 
     def test_matches_ecologits_high_level_api_for_every_provider(self):
         # With default settings, model.compute must equal EcoLogits' own llm_impacts().
